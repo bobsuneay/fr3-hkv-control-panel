@@ -31,8 +31,11 @@
 
 ## 3. 校准模型
 
-编辑 config/cell.yaml。坐标原点在地面、桌面中心，+Z 向上；table.height 是桌面上表面高度，
-base.x/y/yaw 是基座在桌面上的位置和朝向。工具链是：
+编辑 config/cell.yaml。默认坐标原点在地面、桌面中心，+Z 向上；tabletop 模式下
+base.x/y/yaw 是基座在桌面上的位置和朝向。侧装时将 `base.mounting` 设为 `side`，
+并以 world 坐标填写 base.x/y/z/roll/pitch/yaw；z 必须是基座安装面实测高度。
+侧装支架、立柱和墙体必须增加为 URDF/PlanningScene 碰撞几何，不能只旋转基座。
+工具链是：
 
     wrist3_link -> tool0 -> gripper_palm -> gripper_tcp
 

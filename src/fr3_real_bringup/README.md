@@ -1,6 +1,6 @@
 # FR3 桌面正装真机调试包
 
-本目录是独立 ROS 2 Humble 包：桌面正装 FR3、HKV TG-9801 平行夹爪和 MoveIt 2。
+本目录是独立 ROS 2 Humble 包：FR3、HKV TG-9801 平行夹爪和 MoveIt 2，支持桌面正装及侧装基座。
 原有 fr3_bolt_cell 保持不变。本包不启动 Gazebo，不包含螺栓、相机或侧装立柱。
 
 HKV 通过独立的 `gripper_joint` 加入 MoveIt 规划组，并由 Humble 的专用
@@ -27,7 +27,7 @@ MoveIt 规划组是 fairino3_v6_group，末端是 gripper_tcp。mock 模式只�
 
 主要文件：
 
-- config/cell.yaml：桌面、正装基座、工具变换、碰撞包围盒
+- config/cell.yaml：桌面、基座安装姿态（tabletop/side）、工具变换、碰撞包围盒
 - config/real.example.yaml：真机人工验收配置
 - launch/mock.launch.py：虚拟完整链路
 - launch/bringup.launch.py：mock/real 通用入口

@@ -15,6 +15,9 @@
   <xacro:property name="t" value="${cfg['table']}"/>
   <xacro:property name="b" value="${cfg['base']}"/>
   <xacro:property name="g" value="${cfg['tool']}"/>
+  <xacro:property name="base_parent" value="${'table' if b.get('mounting', 'tabletop') == 'tabletop' else 'world'}"/>
+  <xacro:property name="base_z" value="${t['height'] if b.get('mounting', 'tabletop') == 'tabletop' else b['z']}"/>
+  <xacro:property name="base_rpy" value="${[0, 0, b['yaw']] if b.get('mounting', 'tabletop') == 'tabletop' else [b['roll'], b['pitch'], b['yaw']]}"/>
   <xacro:property name="gripper_closed_position" value="$(arg gripper_closed_position)"/>
   <xacro:include filename="$(arg arm_file)"/>
   <link name="world"/>
@@ -46,8 +49,8 @@
     <parent link="world"/><child link="table"/>
   </joint>
   <joint name="table_to_base" type="fixed">
-    <parent link="table"/><child link="base_link"/>
-    <origin xyz="${b['x']} ${b['y']} ${t['height']}" rpy="0 0 ${b['yaw']}"/>
+    <parent link="${base_parent}"/><child link="base_link"/>
+    <origin xyz="${b['x']} ${b['y']} ${base_z}" rpy="${' '.join(map(str,base_rpy))}"/>
   </joint>
   <link name="tool0"/>
   <joint name="wrist_to_tool0" type="fixed">

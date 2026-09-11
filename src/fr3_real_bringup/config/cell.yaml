@@ -6,9 +6,15 @@ table:
   thickness: 0.04
   leg_width: 0.06
 base:
+  # tabletop: base xyz is tabletop-relative and z is table.height;
+  # side: base xyz is world-relative (add the real wall/column collision geometry).
+  mounting: tabletop
   x: 0.25
   y: 0.0
-  yaw: 0.0                 # normal upright mounting; roll and pitch are zero
+  z: 0.0                   # used only when mounting=side
+  roll: 0.0                # degrees; side mounting commonly uses +/-90 here
+  pitch: 0.0               # degrees
+  yaw: 0.0                 # degrees
 tool:
   # These reproduce the previous HKV model, NOT a calibrated physical TCP.
   wrist_to_flange_xyz: [0.0, 0.0, 0.10]

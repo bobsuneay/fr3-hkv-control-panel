@@ -31,10 +31,14 @@ def validate_cell(cfg):
             raise ValueError(f'table.{field} must be positive')
     if t['thickness'] >= t['height'] or t['leg_width'] >= min(t['length'], t['width']):
         raise ValueError('Invalid tabletop/leg dimensions')
-    for field in ('x', 'y', 'yaw'):
+    if b.get('mounting', 'tabletop') not in ('tabletop', 'side'):
+        raise ValueError('base.mounting must be tabletop or side')
+    for field in ('x', 'y', 'z', 'roll', 'pitch', 'yaw'):
         number(b[field])
-    if abs(b['x']) + .08 >= t['length']/2 or abs(b['y']) + .08 >= t['width']/2:
+    if b['mounting'] == 'tabletop' and (abs(b['x']) + .08 >= t['length']/2 or abs(b['y']) + .08 >= t['width']/2):
         raise ValueError('FR3 base must be fully supported by the tabletop')
+    if b['mounting'] == 'side' and abs(b['z']) < 0.05:
+        raise ValueError('side mounting requires base.z in world coordinates')
     if not 0 <= number(g['finger_travel']) <= .05:
         raise ValueError('tool.finger_travel must be in [0, 0.05] m')
     for field in ('wrist_to_flange_xyz', 'wrist_to_flange_rpy', 'flange_to_gripper_xyz',
