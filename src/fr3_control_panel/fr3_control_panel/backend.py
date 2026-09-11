@@ -44,6 +44,7 @@ class Backend(Node):
         self.fk_pending = None
         self.payload = False
         self.fault = None
+        self.connected = False
         self.create_subscription(JointState, cfg['joint_topic'], self.on_joints,
                                  qos_profile_sensor_data)
         self.move = ActionClient(self, MoveGroup, cfg['move_action'])
@@ -57,6 +58,34 @@ class Backend(Node):
         self.thread = threading.Thread(target=self.executor.spin, daemon=True)
         self.thread.start()
 
+    def connect(self, timeout=5.0):
+        """Check all ROS endpoints used by the panel before enabling control."""
+        if self.fault:
+            raise RuntimeError(self.fault)
+        deadline = time.monotonic() + timeout
+        checks = [('机械臂 MoveIt', self.move), ('夹爪控制器', self.grip)]
+        for label, client in checks:
+            remaining = max(0.1, deadline-time.monotonic())
+            if not client.wait_for_server(timeout_sec=remaining):
+                self.connected = False
+                raise RuntimeError(label+'接口未上线')
+        for label, client in [('TCP 正运动学', self.fk), ('碰撞场景', self.scene)]:
+            remaining = max(0.1, deadline-time.monotonic())
+            if not client.wait_for_service(timeout_sec=remaining):
+                self.connected = False
+                raise RuntimeError(label+'服务未上线')
+        self.connected = True
+        try:
+            self.state()
+        except Exception:
+            self.connected = False
+            raise
+        return True
+
+    def disconnect(self):
+        self.cancel()
+        self.connected = False
+
     def on_joints(self, msg):
         now = time.monotonic()
         with self.lock:
@@ -69,6 +98,8 @@ class Backend(Node):
             return dict(self.joints), deepcopy(self.pose), self.pose_time
 
     def state(self):
+        if not self.connected:
+            raise RuntimeError('机械臂与夹爪未连接')
         if self.fault:
             raise RuntimeError(self.fault)
         values, _, _ = self.snapshot()
@@ -84,6 +115,8 @@ class Backend(Node):
     def begin(self):
         if self.fault:
             raise RuntimeError(self.fault)
+        if not self.connected:
+            raise RuntimeError('请先连接机械臂与夹爪')
         self.stop_event.clear()
 
     def capture(self):
@@ -306,7 +339,7 @@ class Backend(Node):
         self.apply_scene(scene)
 
     def close(self):
-        self.cancel()
+        self.disconnect()
         self.executor.shutdown(timeout_sec=2)
         self.thread.join(timeout=2)
         self.destroy_node()

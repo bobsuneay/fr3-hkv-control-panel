@@ -7,6 +7,8 @@
 ## 功能
 
 - 六个关节实时角度（deg），夹爪开度百分比，TCP 位姿（m / deg）。
+- 显式“连接机械臂与夹爪/断开连接”状态管理：连接按钮会检查 MoveIt、TCP FK、
+  PlanningScene 和夹爪 action，同时确认关节反馈有效；未连接时所有运动和采集控制禁用。
 - TCP 来自 MoveIt `/compute_fk` 与当前关节反馈，参考系默认为 `base_link`。
   Rx/Ry/Rz 为固定轴 XYZ 欧拉角，不读取控制柜另行配置的工具坐标。
 - 当前 TCP 填入目标框、手动采集抓取/展示/途经点、双击编辑、JSON 保存载入。
@@ -49,6 +51,10 @@ ros2 run fr3_control_panel panel --mock
 ```
 
 `--mock` 仅配合虚拟 bringup，允许虚拟夹爪空闭合后继续演示；它不会把真实驱动变成虚拟驱动。
+界面打开后先点击“连接机械臂与夹爪”。连接检查通过后状态显示“已连接 / 就绪”，
+运动、夹爪、位姿采集和抓取流程按钮才会启用；点击“断开连接”会取消当前动作并锁定这些按钮。
+连接检查失败时先查看 MoveIt、`/compute_fk`、`/apply_planning_scene` 和
+`/tg9801_gripper_controller/gripper_cmd` 是否已启动。
 也可以用 `ros2 launch fr3_control_panel mock_panel.launch.py` 一次启动模型、MoveIt、RViz 和面板
 （不要和上面的两个启动命令重复运行）。
 RViz 的 MotionPlanning 面板可以先移动虚拟臂，再回本界面采集关键点。
@@ -100,6 +106,7 @@ ros2 launch fr3_real_bringup bringup.launch.py \
 ```
 
 另一个同样 source 环境的终端运行 `ros2 run fr3_control_panel panel`，不要加 `--mock`。
+界面打开后仍需点击“连接机械臂与夹爪”；连接通过不代表硬件使能或急停状态已验证。
 现有官方驱动启动后可能持续下发 ServoJ；面板取消不是硬件急停，也不负责控制柜使能。
 
 ## 3. 碰撞检测的范围与配置

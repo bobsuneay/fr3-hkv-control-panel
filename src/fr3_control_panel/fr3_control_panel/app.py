@@ -36,8 +36,16 @@ class Panel(QtWidgets.QMainWindow):
         title = QtWidgets.QLabel('单机械臂 · 示教与抓取')
         title.setStyleSheet('font-size:25px; font-weight:600')
         layout.addWidget(title)
-        self.status = QtWidgets.QLabel('离线界面预览 — 无设备连接' if backend is None else '等待 ROS 反馈')
+        self.status = QtWidgets.QLabel('离线界面预览 — 无设备连接' if backend is None else '未连接 — 请点击连接')
         layout.addWidget(self.status)
+        connection_row = QtWidgets.QHBoxLayout()
+        layout.addLayout(connection_row)
+        self.connect_button = self.button(connection_row, '连接机械臂与夹爪', self.connect_devices,
+                                           tracked=False)
+        self.disconnect_button = self.button(connection_row, '断开连接', self.disconnect_devices,
+                                              tracked=False)
+        self.disconnect_button.setEnabled(False)
+        connection_row.addWidget(QtWidgets.QLabel('连接检查：MoveIt、TCP FK、PlanningScene、夹爪 action'))
         layout.addWidget(QtWidgets.QLabel(f"参考坐标系：{cfg['frame']}    TCP：{cfg['tcp']}    位姿单位：m / deg"))
         columns = QtWidgets.QHBoxLayout()
         layout.addLayout(columns)
@@ -233,6 +241,29 @@ class Panel(QtWidgets.QMainWindow):
                 self.signals.failed.emit(str(exc))
         self.pool.submit(work)
 
+    def connect_devices(self):
+        if self.backend is None:
+            raise RuntimeError('离线预览不能连接设备')
+        if self.busy:
+            raise RuntimeError('请等待当前操作结束')
+        self.busy = True
+        self.status.setText('连接检查中…')
+        self.connect_button.setEnabled(False)
+        def work():
+            try:
+                self.backend.connect()
+                self.signals.finished.emit('机械臂与夹爪已连接')
+            except Exception as exc:
+                self.signals.failed.emit('连接失败：'+str(exc))
+        self.pool.submit(work)
+
+    def disconnect_devices(self):
+        if self.backend is not None:
+            self.backend.disconnect()
+            self.busy = False
+            self.write_log('机械臂与夹爪已断开，当前动作已取消')
+            self.refresh()
+
     def done(self, text):
         self.busy = False
         self.write_log(text)
@@ -279,8 +310,13 @@ class Panel(QtWidgets.QMainWindow):
             self.write_log('已请求取消当前动作与后续流程')
 
     def refresh(self):
+        if self.backend is not None:
+            connected = getattr(self.backend, 'connected', False)
+            fault = getattr(self.backend, 'fault', None)
+            self.connect_button.setEnabled(not self.busy and not connected and not fault)
+            self.disconnect_button.setEnabled(connected or self.busy)
         for b in self.command_buttons:
-            b.setEnabled(self.backend is not None and not self.busy)
+            b.setEnabled(self.backend is not None and getattr(self.backend, 'connected', False) and not self.busy)
         if self.backend is None:
             return
         values, pose, stamp = self.backend.snapshot()
@@ -295,10 +331,11 @@ class Panel(QtWidgets.QMainWindow):
         self.tcp_label.setText('\n'.join([', '.join(f'{v:.4f}' for v in pose[:3])+' m',
                                         ', '.join(f'{v:.2f}' for v in pose[3:])+' °'])
                                if pose and now-stamp < timeout else '— TCP 反馈过期')
-        self.status.setText(('操作中' if self.busy else '就绪 / 等待操作')+
+        connected = getattr(self.backend, 'connected', False)
+        self.status.setText(('操作中' if self.busy else ('已连接 / 就绪' if connected else '未连接'))+
                             (' · MOCK 虚拟设备' if self.backend.mock else ' · ROS 设备连接模式')+
                             (' · 已挂载物体' if self.backend.payload else ''))
-        if self.backend.fault:
+        if getattr(self.backend, 'fault', None):
             self.status.setText(self.backend.fault)
 
     def closeEvent(self, event):
