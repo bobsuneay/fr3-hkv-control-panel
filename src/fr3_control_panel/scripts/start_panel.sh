@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# ROS 2 setup files use variables that may be unset; nounset would abort while sourcing them.
+set -eo pipefail
 
 # One-command launcher for the FR3 + HKV panel.
 # Usage:
@@ -71,3 +72,4 @@ exec ros2 launch fr3_real_bringup bringup.launch.py \
   mode:=real confirm_real:=true enable_execution:=true rviz:=true \
   real_config:="$REAL_CONFIG" cell:="$CELL_CONFIG" \
   serial_port:="$SERIAL_PORT" baud_rate:="$BAUD_RATE"
+
