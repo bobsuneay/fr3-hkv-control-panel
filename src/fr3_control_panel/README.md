@@ -23,6 +23,24 @@
 
 ## 1. 独立工作空间构建与 mock
 
+构建后可以直接使用一键脚本（Ubuntu）：
+
+```bash
+bash ~/fr3_panel_ws/install/fr3_control_panel/share/fr3_control_panel/scripts/start_panel.sh
+```
+
+它默认启动虚拟机械臂、MoveIt、RViz 和 PyQt 界面。脚本也支持：
+
+```bash
+bash .../start_panel.sh --ui-only  # 只看界面，不连接 ROS
+bash .../start_panel.sh --real     # 使用已完成验收的 real.yaml 启动真机
+```
+
+真实模式可以用环境变量指定配置：`FR3_REAL_CONFIG=/path/real.yaml`、
+`FR3_CELL_CONFIG=/path/cell.yaml`、`HKV_SERIAL_PORT=/dev/ttyACM0`、
+`HKV_BAUD_RATE=1000000`。真实模式脚本会传入 `enable_execution:=true`，
+只能在现场安全检查完成后使用。Windows 双击 `scripts/start_panel.bat` 只能打开离线 UI 预览。
+
 建议只把本交付的两个包复制到干净工作空间，避免现有双臂工程中的同名包/节点冲突。
 假设本交付解压到 `~/fr3_panel_delivery`：
 
