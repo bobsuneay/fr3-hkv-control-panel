@@ -19,7 +19,17 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-WS_ROOT="$(cd -- "$SCRIPT_DIR/../../.." && pwd)"
+if [[ -n "${FR3_PANEL_WS:-}" ]]; then
+  WS_ROOT="$(cd -- "$FR3_PANEL_WS" && pwd)"
+elif [[ -f "$(cd -- "$SCRIPT_DIR/../../.." && pwd)/install/setup.bash" ]]; then
+  # Source checkout: <ws>/src/fr3_control_panel/scripts/start_panel.sh
+  WS_ROOT="$(cd -- "$SCRIPT_DIR/../../.." && pwd)"
+elif [[ -f "$(cd -- "$SCRIPT_DIR/../../../../.." && pwd)/install/setup.bash" ]]; then
+  # Installed data file: <ws>/install/fr3_control_panel/share/fr3_control_panel/scripts/...
+  WS_ROOT="$(cd -- "$SCRIPT_DIR/../../../../.." && pwd)"
+else
+  WS_ROOT=""
+fi
 
 source_if_exists() {
   if [[ -f "$1" ]]; then
@@ -32,7 +42,12 @@ source_if_exists() {
 }
 
 source_if_exists /opt/ros/humble/setup.bash
-source_if_exists "$WS_ROOT/install/setup.bash"
+if [[ -n "$WS_ROOT" ]]; then
+  source_if_exists "$WS_ROOT/install/setup.bash"
+else
+  echo "未找到工作空间 install/setup.bash；请先 source ROS 工作空间，或设置 FR3_PANEL_WS。" >&2
+  exit 1
+fi
 
 if [[ "$MODE" == "ui-only" ]]; then
   exec ros2 run fr3_control_panel panel --demo
@@ -43,7 +58,7 @@ if [[ "$MODE" == "mock" ]]; then
 fi
 
 REAL_CONFIG="${FR3_REAL_CONFIG:-$HOME/fr3_config/real.yaml}"
-CELL_CONFIG="${FR3_CELL_CONFIG:-$WS_ROOT/install/fr3_real_bringup/share/fr3_real_bringup/config/cell.yaml}"
+CELL_CONFIG="${FR3_CELL_CONFIG:-$(ros2 pkg prefix fr3_real_bringup)/share/fr3_real_bringup/config/cell.yaml}"
 SERIAL_PORT="${HKV_SERIAL_PORT:-/dev/ttyACM0}"
 BAUD_RATE="${HKV_BAUD_RATE:-1000000}"
 if [[ ! -f "$REAL_CONFIG" ]]; then

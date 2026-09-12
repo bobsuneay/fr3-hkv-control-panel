@@ -29,6 +29,12 @@
 bash ~/fr3_panel_ws/install/fr3_control_panel/share/fr3_control_panel/scripts/start_panel.sh
 ```
 
+如果脚本无法自动定位工作空间，可显式指定：
+
+```bash
+FR3_PANEL_WS=~/fr3_panel_ws bash ~/fr3_panel_ws/install/fr3_control_panel/share/fr3_control_panel/scripts/start_panel.sh
+```
+
 它默认启动虚拟机械臂、MoveIt、RViz 和 PyQt 界面。脚本也支持：
 
 ```bash
